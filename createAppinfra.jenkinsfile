@@ -3,7 +3,7 @@ agent any
 stages{
   stage('Create stack'){
     steps{
-       sh "aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body file:///ec2-alb-app.yaml --parameters ParameterKey=keyName,ParameterValue=${KEY_NAME}"
+       sh "aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body file://ec2-alb-app.yaml --parameters ParameterKey=keyName,ParameterValue=${KEY_NAME}"
     }
   }
 }
