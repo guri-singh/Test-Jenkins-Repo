@@ -1,0 +1,10 @@
+pipeline{
+agent any
+stages{
+  stage('Create pipeline stack'){
+    steps{
+       sh "aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body file://${WORKSPACE}/codedeploy_pipeline_template.yaml --region 'ap-south-1' --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=GitHubOAuthToken,ParameterValue=${GitHubOAuthToken} ParameterKey=EC2InstanceTag,ParameterValue=${EC2_INSTANCE_TAG} ParameterKey=GitHubOwner,ParameterValue=${GitHubOwner} ParameterKey=GitHubRepo,ParameterValue=${GitHubRepo} ParameterKey=GitHubBranch,ParameterValue=${GitHubBranch}" 
+    }
+  }
+}
+}
