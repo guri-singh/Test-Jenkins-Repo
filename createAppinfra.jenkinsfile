@@ -3,7 +3,7 @@ agent any
 stages{
   stage('Create stack'){
     steps{
-       sh "aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body file://${WORKSPACE}/appTemplate_ALB_StaticVPC.yaml --region 'ap-south-1' --capabilities CAPABILITY_NAMED_IAM --profile dev --parameters ParameterKey=keyName,ParameterValue=${KEY_NAME} ParameterKey=EC2InstanceTag,ParameterValue=${EC2_INSTANCE_TAG}" 
+       sh "aws cloudformation create-stack --stack-name ${STACK_NAME} --template-body file://${WORKSPACE}/appTemplate_ALB_StaticVPC.yaml --region 'ap-south-1' --capabilities CAPABILITY_NAMED_IAM --parameters ParameterKey=keyName,ParameterValue=${KEY_NAME} ParameterKey=EC2InstanceTag,ParameterValue=${EC2_INSTANCE_TAG}" 
     }
   }
 }
