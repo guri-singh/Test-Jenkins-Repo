@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to launch Codedeploy and codepipeline
+
+#Parameters that need to provided during stack creation 
+
+Parameters:
+    GitHubOAuthToken:
+        Type: String
+        NoEcho: true
+        
+    GitHubOwner:
+        Type: String
+        Default: guri-singh
+       
+    GitHubRepo:
+        Type: String
+        Default: Test-app
+        
+    GitHubBranch:
+        Type: String
+        Default: main
+    
+    EC2InstanceTag:
+        Description: Value for ec2 instance name tag
+        Type: String
+        Default: Test-app
+        
+Resources:
+
+        CodeDeployApplication: 
+            Type: AWS::CodeDeploy::Application 
+            Properties:
+                ComputePlatform: Server
+        CodeDeploymentGroup:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+            Properties:
+                ApplicationName: !Ref CodeDeployApplication
+                ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+                DeploymentConfigName: CodeDeployDefault.AllAtOnce
+                Ec2TagFilters: 
+                    -
+                        Key: Name
+                        Value: !Ref EC2InstanceTag
+                        Type: "KEY_AND_VALUE" 
+        
+        testArtifactBucket:
+            Type: AWS::S3::Bucket
+
+        testCodePipeline:
+            Type: AWS::CodePipeline::Pipeline
+            Properties:
+                ArtifactStore:
+                    Type: S3
+                    Location: !Ref testArtifactBucket
+                RestartExecutionOnUpdate: true
+                RoleArn: !GetAtt CodePipelineRole.Arn
+                Stages:
+                    - Name: Source
+                      Actions:
+                            - Name: Source
+                              InputArtifacts: []
+                              ActionTypeId:
+                                    Category: Source
+                                    Owner: ThirdParty
+                                    Version: 1
+                                    Provider: GitHub
+                              OutputArtifacts:
+                                        - Name: SourceCode
+                              Configuration:
+                                        Owner: !Ref GitHubOwner
+                                        Repo: !Ref GitHubRepo
+                                        Branch: !Ref GitHubBranch
+                                        PollForSourceChanges: false
+                                        OAuthToken: !Ref GitHubOAuthToken
+                              RunOrder: 1
+                    - Name: Deploy
+                      Actions:
+                            - Name: CloudFormationDeploy
+                              ActionTypeId:
+                                    Category: Deploy
+                                    Owner: AWS
+                                    Provider: CodeDeploy
+                                    Version: 1
+                              InputArtifacts:
+                                        - Name: SourceCode
+                              Configuration:
+                                        ApplicationName: !Ref CodeDeployApplication
+                                        DeploymentGroupName: !Ref CodeDeploymentGroup
+                              RunOrder: 1
+                                    
+        GithubWebhook:
+            Type: 'AWS::CodePipeline::Webhook'
+            Properties:
+                Authentication: GITHUB_HMAC
+                AuthenticationConfiguration:
+                    SecretToken: !Ref GitHubOAuthToken
+                RegisterWithThirdParty: 'true'
+                Filters:
+                - JsonPath: "$.ref"
+                  MatchEquals: refs/heads/{Branch}
+                TargetPipeline: !Ref testCodePipeline
+                TargetAction: Source
+                TargetPipelineVersion: !GetAtt testCodePipeline.Version
+         
+        CodePipelineRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                        Effect: Allow
+                        Principal:
+                            Service: codepipeline.amazonaws.com
+                        Action: sts:AssumeRole
+                ManagedPolicyArns:
+                    - arn:aws:iam::aws:policy/AdministratorAccess
+
+        CodeDeployRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Sid: CodeDeployTrustPolicy
+                          Effect: Allow
+                          Principal:
+                            Service:
+                                - codedeploy.amazonaws.com
+                          Action: sts:AssumeRole
+                Path: /
+                ManagedPolicyArns:
+                    - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole      
+        
+        CloudformationRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                        Effect: Allow
+                        Principal:
+                            Service: cloudformation.amazonaws.com
+                        Action: sts:AssumeRole
+                ManagedPolicyArns:
+                    - arn:aws:iam::aws:policy/AdministratorAccess 
