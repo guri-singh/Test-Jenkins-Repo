@@ -87,7 +87,7 @@ Resources:
                 - Id: !Ref appInstance
                   Port: 80
             UnhealthyThresholdCount: 3
-            VpcId: vpc-07b9a395a01a5a1dc
+            VpcId: vpc-00f481f8200a7e957
             
 # creating Application load balancer
     appALB:
@@ -95,9 +95,9 @@ Resources:
         Properties:
             Scheme: internet-facing
             Subnets:
-                - subnet-063bbe0318c92d006
-                - subnet-0161eacd3cce0498f
-                - subnet-0fb2a8ec6bfb7792f
+                - subnet-0e7b3f2007e464fee
+                - subnet-0e267ed01dfaebcfa
+                - subnet-072072b4ca1a3abba
             SecurityGroups:
                 - !GetAtt appALBSecurityGroup.GroupId
                 
